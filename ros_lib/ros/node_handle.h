@@ -422,7 +422,7 @@ namespace ros {
 
       virtual int publish(int id, const Msg * msg)
       {
-        if(id >= 100 && !configured_)
+        if(id >= 128 && !configured_)
 	  return 0;
 
         /* serialize message */
