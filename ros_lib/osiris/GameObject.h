@@ -110,8 +110,7 @@ namespace osiris
       *(outbuffer + offset + 3) = (this->poses_length >> (8 * 3)) & 0xFF;
       offset += sizeof(this->poses_length);
       for( uint32_t i = 0; i < poses_length; i++){
-		  unsigned char * temp = outbuffer + offset;
-      offset += this->poses[i].serialize(temp);
+      offset += this->poses[i].serialize(outbuffer + offset);
       }
       union {
         bool real;
