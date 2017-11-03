@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "ros/msg.h"
 #include "geometry_msgs/Pose.h"
+#include "osiris/Values.h"
 
 namespace osiris
 {
@@ -29,12 +30,14 @@ namespace osiris
       _poses_type * poses;
       typedef bool _has_event_type;
       _has_event_type has_event;
-      typedef const char* _events_type;
-      _events_type events;
+      uint32_t events_length;
+      typedef char* _events_type;
+      _events_type st_events;
+      _events_type * events;
       typedef bool _has_values_type;
       _has_values_type has_values;
       uint32_t values_length;
-      typedef double _values_type;
+      typedef osiris::Values _values_type;
       _values_type st_values;
       _values_type * values;
 
@@ -46,7 +49,7 @@ namespace osiris
       num_poses(0),
       poses_length(0), poses(NULL),
       has_event(0),
-      events(""),
+      events_length(0), events(NULL),
       has_values(0),
       values_length(0), values(NULL)
     {
@@ -119,11 +122,18 @@ namespace osiris
       u_has_event.real = this->has_event;
       *(outbuffer + offset + 0) = (u_has_event.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->has_event);
-      uint32_t length_events = strlen(this->events);
-      varToArr(outbuffer + offset, length_events);
+      *(outbuffer + offset + 0) = (this->events_length >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (this->events_length >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (this->events_length >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (this->events_length >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->events_length);
+      for( uint32_t i = 0; i < events_length; i++){
+      uint32_t length_eventsi = strlen(this->events[i]);
+      varToArr(outbuffer + offset, length_eventsi);
       offset += 4;
-      memcpy(outbuffer + offset, this->events, length_events);
-      offset += length_events;
+      memcpy(outbuffer + offset, this->events[i], length_eventsi);
+      offset += length_eventsi;
+      }
       union {
         bool real;
         uint8_t base;
@@ -137,20 +147,7 @@ namespace osiris
       *(outbuffer + offset + 3) = (this->values_length >> (8 * 3)) & 0xFF;
       offset += sizeof(this->values_length);
       for( uint32_t i = 0; i < values_length; i++){
-      union {
-        double real;
-        uint64_t base;
-      } u_valuesi;
-      u_valuesi.real = this->values[i];
-      *(outbuffer + offset + 0) = (u_valuesi.base >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (u_valuesi.base >> (8 * 1)) & 0xFF;
-      *(outbuffer + offset + 2) = (u_valuesi.base >> (8 * 2)) & 0xFF;
-      *(outbuffer + offset + 3) = (u_valuesi.base >> (8 * 3)) & 0xFF;
-      *(outbuffer + offset + 4) = (u_valuesi.base >> (8 * 4)) & 0xFF;
-      *(outbuffer + offset + 5) = (u_valuesi.base >> (8 * 5)) & 0xFF;
-      *(outbuffer + offset + 6) = (u_valuesi.base >> (8 * 6)) & 0xFF;
-      *(outbuffer + offset + 7) = (u_valuesi.base >> (8 * 7)) & 0xFF;
-      offset += sizeof(this->values[i]);
+      offset += this->values[i].serialize(outbuffer + offset);
       }
       return offset;
     }
@@ -235,15 +232,26 @@ namespace osiris
       u_has_event.base |= ((uint8_t) (*(inbuffer + offset + 0))) << (8 * 0);
       this->has_event = u_has_event.real;
       offset += sizeof(this->has_event);
-      uint32_t length_events;
-      arrToVar(length_events, (inbuffer + offset));
+      uint32_t events_lengthT = ((uint32_t) (*(inbuffer + offset))); 
+      events_lengthT |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1); 
+      events_lengthT |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2); 
+      events_lengthT |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3); 
+      offset += sizeof(this->events_length);
+      if(events_lengthT > events_length)
+        this->events = (char**)realloc(this->events, events_lengthT * sizeof(char*));
+      events_length = events_lengthT;
+      for( uint32_t i = 0; i < events_length; i++){
+      uint32_t length_st_events;
+      arrToVar(length_st_events, (inbuffer + offset));
       offset += 4;
-      for(unsigned int k= offset; k< offset+length_events; ++k){
+      for(unsigned int k= offset; k< offset+length_st_events; ++k){
           inbuffer[k-1]=inbuffer[k];
       }
-      inbuffer[offset+length_events-1]=0;
-      this->events = (char *)(inbuffer + offset-1);
-      offset += length_events;
+      inbuffer[offset+length_st_events-1]=0;
+      this->st_events = (char *)(inbuffer + offset-1);
+      offset += length_st_events;
+        memcpy( &(this->events[i]), &(this->st_events), sizeof(char*));
+      }
       union {
         bool real;
         uint8_t base;
@@ -258,31 +266,17 @@ namespace osiris
       values_lengthT |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3); 
       offset += sizeof(this->values_length);
       if(values_lengthT > values_length)
-        this->values = (double*)realloc(this->values, values_lengthT * sizeof(double));
+        this->values = (osiris::Values*)realloc(this->values, values_lengthT * sizeof(osiris::Values));
       values_length = values_lengthT;
       for( uint32_t i = 0; i < values_length; i++){
-      union {
-        double real;
-        uint64_t base;
-      } u_st_values;
-      u_st_values.base = 0;
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 0))) << (8 * 0);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 2))) << (8 * 2);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 3))) << (8 * 3);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 4))) << (8 * 4);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 5))) << (8 * 5);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 6))) << (8 * 6);
-      u_st_values.base |= ((uint64_t) (*(inbuffer + offset + 7))) << (8 * 7);
-      this->st_values = u_st_values.real;
-      offset += sizeof(this->st_values);
-        memcpy( &(this->values[i]), &(this->st_values), sizeof(double));
+      offset += this->st_values.deserialize(inbuffer + offset);
+        memcpy( &(this->values[i]), &(this->st_values), sizeof(osiris::Values));
       }
      return offset;
     }
 
     const char * getType(){ return "osiris/GameObject"; };
-    const char * getMD5(){ return "4c8b65052192fd26b30f4552ab839324"; };
+    const char * getMD5(){ return "a1a074404fecbf9875a891ec81d14480"; };
 
   };
 
