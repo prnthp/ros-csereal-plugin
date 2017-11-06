@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -110,7 +110,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)x64\Debug\$(ProjectName).dll" "C:\Users\Rombolab\Documents\UnityProjects\ROSSerialDev\$(ProjectName).dll" </Command>
+      <Command>copy /Y "$(SolutionDir)x64\Debug\$(ProjectName).dll" "C:\Users\Rombolab\Documents\UnityProjects\ROSSerialDev\$(ProjectName).dll" 
+copy /Y "$(SolutionDir)x64\Debug\$(ProjectName).dll" "D:\UnityProjects\ROSSerialDev\$(ProjectName).dll" </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
