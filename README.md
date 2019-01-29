@@ -1,6 +1,9 @@
-# ros-csereal-plugin
-ROS Csereal Native Plugin for ROSSerial &lt;-> Unity
+# ROS CSereal
+<img alt="ROS-CSereal logo" src="https://prnthp.github.io/images/roscsereal.png" width="500" />
+ROS Csereal Native Plugin for ROSSerial ↔ Unity
 Built on top of rosserial_windows. Uses TCP for communication
+<img alt="csreal screenshot" src="https://prnthp.github.io/images/csereal-screenshot.PNG" width="280" />
+Features a simple drag-n-drop interface, making it super easy to implement ROS in your Unity3D project.
 
 ## Compilation
 Precompiled x64 binary is provided in the Unity directory.
